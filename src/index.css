@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased min-h-screen relative;
+  }
+}
+
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('https://skilled-crimson-hsribvmiaa.edgeone.app/Gemini_Generated_Image_7t7ubp7t7ubp7t7u.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-referrer;
+  opacity: 0.2;
+  filter: brightness(0.7) contrast(1.1);
+}
+
+.glass-card {
+  @apply bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+.marketing-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-text {
+  background-size: 200% auto;
+  animation: gradient-shift 4s linear infinite;
+}
+
+.glow-indigo:hover {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.glow-emerald:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.glow-red:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.btn-primary {
+  @apply relative overflow-hidden transition-all duration-300;
+}
+
+.btn-primary::after {
+  content: '';
+  @apply absolute inset-0 bg-white/10 translate-y-full transition-transform duration-300;
+}
+
+.btn-primary:hover::after {
+  @apply translate-y-0;
+}
+
+.sidebar-glass {
+  @apply bg-slate-950/80 backdrop-blur-2xl border-r border-white/5;
+}
+
+.form-glow-indigo {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.form-glow-purple {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  padding: 1px;
+}
+
+.gradient-border > * {
+  @apply bg-slate-900 rounded-[inherit];
+}
+
+@media (max-width: 1024px) {
+  .sidebar-mobile {
+    @apply fixed inset-y-0 left-0 w-72 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out;
+  }
+  .sidebar-mobile.open {
+    @apply translate-x-0;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
