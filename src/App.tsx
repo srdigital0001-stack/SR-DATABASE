@@ -701,8 +701,17 @@ export default function App() {
       const res = await fetch('/api/clients');
       const data = await res.json();
       setClients(data);
+      // Auto-backup to browser memory
+      if (data.length > 0) {
+        localStorage.setItem('clientflow_backup', JSON.stringify(data));
+      }
     } catch (err) {
       console.error('Failed to fetch clients:', err);
+      // Try to load from browser memory if server fails
+      const backup = localStorage.getItem('clientflow_backup');
+      if (backup) {
+        setClients(JSON.parse(backup));
+      }
     } finally {
       setLoading(false);
     }
@@ -1480,6 +1489,47 @@ export default function App() {
               </motion.label>
             </div>
 
+            <div className="glass-card p-8 rounded-3xl border border-white/10">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center mb-6">
+                <Database className="w-6 h-6 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Browser Cache Recovery</h3>
+              <p className="text-slate-400 mb-6">If the server resets, you can try to restore client data from your browser's local memory (Auto-saved every time you view clients).</p>
+              <motion.button 
+                whileHover={{ scale: 1.05, y: -2, boxShadow: "0 20px 40px rgba(245,158,11,0.3)" }}
+                whileTap={{ scale: 0.98 }}
+                onClick={async () => {
+                  const backup = localStorage.getItem('clientflow_backup');
+                  if (!backup) {
+                    alert('No browser backup found.');
+                    return;
+                  }
+                  if (!confirm('Attempt to restore clients from browser cache? This will try to re-sync them to the server.')) return;
+                  
+                  const clients = JSON.parse(backup);
+                  let successCount = 0;
+                  for (const client of clients) {
+                    try {
+                      const res = await fetch('/api/clients', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(client)
+                      });
+                      if (res.ok) successCount++;
+                    } catch (e) {
+                      console.error('Failed to sync client:', client.name);
+                    }
+                  }
+                  alert(`Sync complete! Successfully restored ${successCount} clients to the server.`);
+                  fetchClients();
+                  setActiveTab('clients');
+                }}
+                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-black rounded-2xl hover:from-amber-700 hover:to-orange-700 transition-all shadow-xl shadow-amber-500/25 glow-amber"
+              >
+                Sync Cache to Server
+              </motion.button>
+            </div>
+
             <div className="glass-card p-8 rounded-3xl border border-white/10 md:col-span-2">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
@@ -1490,21 +1540,27 @@ export default function App() {
                   <p className="text-slate-400 text-sm">Your data is stored in a persistent SQLite database on the server.</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Database Type</p>
-                  <p className="text-white font-bold">SQLite 3 (Persistent)</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-colors">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <p className="text-indigo-400 font-black text-xs uppercase tracking-widest">1. Server Memory</p>
+                  </div>
+                  <p className="text-slate-400 text-xs leading-relaxed">The primary storage is <span className="text-white font-bold">clientflow.db</span>. This file lives on your Hostinger server. Ensure the folder has <span className="text-indigo-400">write permissions</span>.</p>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Last Backup</p>
-                  <p className="text-white font-bold">Manual Only</p>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-amber-500/30 transition-colors">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <p className="text-amber-400 font-black text-xs uppercase tracking-widest">2. Browser Cache</p>
+                  </div>
+                  <p className="text-slate-400 text-xs leading-relaxed">The app automatically caches clients in your browser. If the server resets, use <span className="text-amber-400 font-bold">Sync Cache</span> to restore them instantly.</p>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Storage Status</p>
-                  <p className="text-emerald-400 font-bold flex items-center gap-2">
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors">
+                  <div className="flex items-center gap-2 mb-3">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Healthy
-                  </p>
+                    <p className="text-emerald-400 font-black text-xs uppercase tracking-widest">3. Manual Backups</p>
+                  </div>
+                  <p className="text-slate-400 text-xs leading-relaxed">Download a JSON backup weekly. This is the <span className="text-emerald-400 font-bold">ultimate safety net</span> for your agency's entire history.</p>
                 </div>
               </div>
             </div>
