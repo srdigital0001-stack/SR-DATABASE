@@ -647,13 +647,19 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [dbStatus, setDbStatus] = useState<string>('');
 
   useEffect(() => {
     const checkServer = async () => {
       try {
         const res = await fetch('/api/health');
-        if (res.ok) setServerStatus('online');
-        else setServerStatus('offline');
+        const data = await res.json();
+        if (res.ok) {
+          setServerStatus('online');
+          setDbStatus(data.database);
+        } else {
+          setServerStatus('offline');
+        }
       } catch {
         setServerStatus('offline');
       }
@@ -1047,7 +1053,9 @@ export default function App() {
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${serverStatus === 'online' ? 'bg-emerald-500 animate-pulse' : serverStatus === 'offline' ? 'bg-rose-500' : 'bg-slate-500'}`} />
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                  {serverStatus === 'online' ? 'Cloud Sync Active' : serverStatus === 'offline' ? 'Sync Error' : 'Checking...'}
+                  {serverStatus === 'online' 
+                    ? (dbStatus.includes('fallback') ? 'Local Mode (No Save)' : 'Cloud Sync Active') 
+                    : serverStatus === 'offline' ? 'Sync Error' : 'Checking...'}
                 </p>
               </div>
             </div>

@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,7 +6,16 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("clientflow.db");
+let db: any;
+try {
+  db = new Database(path.join(__dirname, "clientflow.db"));
+  console.log("Database connected successfully at:", path.join(__dirname, "clientflow.db"));
+} catch (error) {
+  console.error("Database connection failed:", error);
+  // Fallback to in-memory if file fails (not ideal for production but prevents crash)
+  db = new Database(":memory:");
+  console.warn("Falling back to in-memory database. Data will NOT be persisted!");
+}
 
 // Initialize database
 db.exec(`
@@ -92,9 +100,10 @@ async function startServer() {
       const clientCount = db.prepare("SELECT COUNT(*) as count FROM clients").get();
       res.json({ 
         status: "ok", 
-        database: "connected", 
+        database: db.name === ":memory:" ? "in-memory (fallback)" : "connected", 
         clients: clientCount.count,
-        env: process.env.NODE_ENV || 'development'
+        env: process.env.NODE_ENV || 'development',
+        dbPath: db.name
       });
     } catch (error) {
       res.status(500).json({ status: "error", message: error.message });
@@ -392,11 +401,21 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("Vite dev server integrated.");
+    } catch (e) {
+      console.warn("Vite not found or failed to start, falling back to static serving.");
+      app.use(express.static(path.join(__dirname, "dist")));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "dist", "index.html"));
+      });
+    }
   } else {
     app.use(express.static(path.join(__dirname, "dist")));
     app.get("*", (req, res) => {
